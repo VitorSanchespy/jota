@@ -24,6 +24,10 @@ const getUserRole = (user) => {
 export default function CreateProcessModal({ onCreated, onClose }) {
   const { token, user } = useAuthContext();
   const [usuarios, setUsuarios] = useState([]);
+  const [materias, setMaterias] = useState([]);
+  const [fases, setFases] = useState([]);
+  const [diligencias, setDiligencias] = useState([]);
+  const [locais, setLocais] = useState([]);
   const [form, setForm] = useState({
     numero_processo: "",
     descricao: "",
@@ -31,7 +35,15 @@ export default function CreateProcessModal({ onCreated, onClose }) {
     tipo_processo: "",
     idusuario_responsavel: "",
     data_encerramento: "",
-    observacoes: ""
+    observacoes: "",
+    materia_assunto_id: "",
+    fase_id: "",
+    diligencia_id: "",
+    local_tramitacao_id: "",
+    sistema: "Físico",
+    num_processo_sei: "",
+    assistido: "",
+    contato_assistido: ""
   });
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState("");
@@ -40,9 +52,28 @@ export default function CreateProcessModal({ onCreated, onClose }) {
     // Busca usuários conforme o papel
     let url = "/api/usuarios";
     if (getUserRole(user) === "Professor") url = "/api/usuarios/alunos";
-    apiRequest(url, { token })
-      .then(data => setUsuarios(data))
-      .catch(() => setUsuarios([]));
+    
+    // Buscar dados das tabelas auxiliares
+    Promise.all([
+      apiRequest(url, { token }),
+      apiRequest("/api/aux/materia-assunto", { token }),
+      apiRequest("/api/aux/fase", { token }),
+      apiRequest("/api/aux/diligencia", { token }),
+      apiRequest("/api/aux/local-tramitacao", { token })
+    ]).then(([usuariosData, materiasData, fasesData, diligenciasData, locaisData]) => {
+      setUsuarios(usuariosData || []);
+      setMaterias(materiasData || []);
+      setFases(fasesData || []);
+      setDiligencias(diligenciasData || []);
+      setLocais(locaisData || []);
+    }).catch(error => {
+      console.error("Erro ao carregar dados:", error);
+      setUsuarios([]);
+      setMaterias([]);
+      setFases([]);
+      setDiligencias([]);
+      setLocais([]);
+    });
   }, [token, user]);
 
   function handleClose() {
@@ -60,7 +91,7 @@ export default function CreateProcessModal({ onCreated, onClose }) {
     setErro("");
     try {
       // Envia para o backend
-      await apiRequest("/api/processos", {
+      await apiRequest("/api/processos/novo", {
         token,
         method: "POST",
         body: form
@@ -72,7 +103,15 @@ export default function CreateProcessModal({ onCreated, onClose }) {
         tipo_processo: "",
         idusuario_responsavel: "",
         data_encerramento: "",
-        observacoes: ""
+        observacoes: "",
+        materia_assunto_id: "",
+        fase_id: "",
+        diligencia_id: "",
+        local_tramitacao_id: "",
+        sistema: "Físico",
+        num_processo_sei: "",
+        assistido: "",
+        contato_assistido: ""
       });
       if (onCreated) onCreated();
       handleClose();
@@ -181,15 +220,154 @@ export default function CreateProcessModal({ onCreated, onClose }) {
               style={{ width: '100%', padding: 8, border: '1px solid #ddd', borderRadius: 4 }}
             />
           </div>
+
+          <div>
+            <label style={{ display: 'block', marginBottom: 5, fontWeight: 'bold' }}>
+              Matéria/Assunto*:
+            </label>
+            <select
+              name="materia_assunto_id"
+              value={form.materia_assunto_id}
+              onChange={handleChange}
+              required
+              style={{ width: '100%', padding: 8, border: '1px solid #ddd', borderRadius: 4 }}
+            >
+              <option value="">Selecione uma matéria</option>
+              {materias.map(materia => (
+                <option key={materia.id} value={materia.id}>
+                  {materia.nome}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label style={{ display: 'block', marginBottom: 5, fontWeight: 'bold' }}>
+              Fase*:
+            </label>
+            <select
+              name="fase_id"
+              value={form.fase_id}
+              onChange={handleChange}
+              required
+              style={{ width: '100%', padding: 8, border: '1px solid #ddd', borderRadius: 4 }}
+            >
+              <option value="">Selecione uma fase</option>
+              {fases.map(fase => (
+                <option key={fase.id} value={fase.id}>
+                  {fase.nome}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label style={{ display: 'block', marginBottom: 5, fontWeight: 'bold' }}>
+              Diligência*:
+            </label>
+            <select
+              name="diligencia_id"
+              value={form.diligencia_id}
+              onChange={handleChange}
+              required
+              style={{ width: '100%', padding: 8, border: '1px solid #ddd', borderRadius: 4 }}
+            >
+              <option value="">Selecione uma diligência</option>
+              {diligencias.map(diligencia => (
+                <option key={diligencia.id} value={diligencia.id}>
+                  {diligencia.nome}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label style={{ display: 'block', marginBottom: 5, fontWeight: 'bold' }}>
+              Local de Tramitação*:
+            </label>
+            <select
+              name="local_tramitacao_id"
+              value={form.local_tramitacao_id}
+              onChange={handleChange}
+              required
+              style={{ width: '100%', padding: 8, border: '1px solid #ddd', borderRadius: 4 }}
+            >
+              <option value="">Selecione um local</option>
+              {locais.map(local => (
+                <option key={local.id} value={local.id}>
+                  {local.nome}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label style={{ display: 'block', marginBottom: 5, fontWeight: 'bold' }}>
+              Sistema*:
+            </label>
+            <select
+              name="sistema"
+              value={form.sistema}
+              onChange={handleChange}
+              required
+              style={{ width: '100%', padding: 8, border: '1px solid #ddd', borderRadius: 4 }}
+            >
+              <option value="Físico">Físico</option>
+              <option value="PEA">PEA</option>
+              <option value="PJE">PJE</option>
+            </select>
+          </div>
+
+          <div>
+            <label style={{ display: 'block', marginBottom: 5, fontWeight: 'bold' }}>
+              Número do Processo SEI:
+            </label>
+            <input
+              type="text"
+              name="num_processo_sei"
+              value={form.num_processo_sei}
+              onChange={handleChange}
+              style={{ width: '100%', padding: 8, border: '1px solid #ddd', borderRadius: 4 }}
+            />
+          </div>
+
+          <div>
+            <label style={{ display: 'block', marginBottom: 5, fontWeight: 'bold' }}>
+              Assistido:
+            </label>
+            <input
+              type="text"
+              name="assistido"
+              value={form.assistido}
+              onChange={handleChange}
+              style={{ width: '100%', padding: 8, border: '1px solid #ddd', borderRadius: 4 }}
+            />
+          </div>
+
+          <div>
+            <label style={{ display: 'block', marginBottom: 5, fontWeight: 'bold' }}>
+              Contato do Assistido*:
+            </label>
+            <input
+              type="text"
+              name="contato_assistido"
+              value={form.contato_assistido}
+              onChange={handleChange}
+              required
+              placeholder="(XX) XXXXX-XXXX"
+              style={{ width: '100%', padding: 8, border: '1px solid #ddd', borderRadius: 4 }}
+            />
+          </div>
           
           <div>
             <label style={{ display: 'block', marginBottom: 5, fontWeight: 'bold' }}>
-              Responsável:
+              Responsável*:
             </label>
             <select
               name="idusuario_responsavel"
               value={form.idusuario_responsavel}
               onChange={handleChange}
+              required
               style={{ width: '100%', padding: 8, border: '1px solid #ddd', borderRadius: 4 }}
             >
               <option value="">Selecione um responsável</option>

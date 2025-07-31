@@ -1,9 +1,10 @@
 const bcrypt = require('bcryptjs');
 const Sequelize = require('sequelize');
 
-// Conectar diretamente como root
-const sequelize = new Sequelize('npjdatabase', 'root', '', {
+// Conectar diretamente como root ao container Docker
+const sequelize = new Sequelize('npjdatabase', 'root', '12345678@', {
     host: 'localhost',
+    port: 3306, // Porta mapeada do container
     dialect: 'mysql',
     logging: false
 });
