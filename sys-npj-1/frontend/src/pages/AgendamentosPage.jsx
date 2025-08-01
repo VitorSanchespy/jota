@@ -5,10 +5,7 @@ import PageContent from '../components/layout/PageContent';
 
 const AgendamentosPage = () => {
   return (
-    <MainLayout>
-        title="Agendamentos" 
-        icon="📅"
-      
+    <MainLayout title="Agendamentos" icon="📅">
       <PageContent>
         <AgendamentoManager />
       </PageContent>
