@@ -1,0 +1,77 @@
+services:
+  npj-professional-db:
+    image: mysql:8.0
+    container_name: npj-professional-db
+    environment:
+      MYSQL_ROOT_PASSWORD: 12345678@
+      MYSQL_DATABASE: npjdatabase
+      MYSQL_USER: appuser
+      MYSQL_PASSWORD: app123
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data_professional:/var/lib/mysql
+      - ./db:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  npj-professional-redis:
+    image: redis:7-alpine
+    container_name: npj-professional-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: npj-professional-backend
+    ports:
+      - "3002:3002"
+    environment:
+      NODE_ENV: production
+      PORT: 3002
+      DB_HOST: npj-professional-db
+      DB_USER: appuser
+      DB_PASS: app123
+      DB_NAME: npjdatabase
+      REDIS_HOST: npj-professional-redis
+      REDIS_PORT: 6379
+      JWT_SECRET: your-super-secret-jwt-key-2024
+      JWT_REFRESH_SECRET: your-super-secret-refresh-key-2024
+    depends_on:
+      npj-professional-db:
+        condition: service_healthy
+      npj-professional-redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    build: 
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: npj-professional-frontend
+    ports:
+      - "5174:5174"
+    environment:
+      VITE_API_BASE_URL: http://localhost:3002
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  mysql_data_professional:
+    driver: local
+  redis_data:
+    driver: local
