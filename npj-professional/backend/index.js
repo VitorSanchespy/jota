@@ -85,6 +85,10 @@ const io = socketIo(server, {
 // Configurar o serviço de notificação com Socket.IO
 notificationService.setSocketIo(io);
 
+// Configurar o serviço de chat com Socket.IO
+const chatService = require('./services/chatService');
+chatService.setSocketIo(io);
+
 // Middleware de autenticação para WebSocket
 io.use((socket, next) => {
   const token = socket.handshake.auth.token;
@@ -205,6 +209,15 @@ app.use('/api/usuarios', require('./routes/usuarioRoutes'));
 app.use('/api/processos', require('./routes/processoRoutes'));
 app.use('/api/atualizacoes', require('./routes/atualizacaoProcessoRoutes'));
 app.use('/api/agendamentos', require('./routes/agendamentoRoutes'));
+
+// Novas rotas avançadas do NPJ Professional
+app.use('/api/notifications', require('./routes/notificationRoutes'));
+app.use('/api/analytics', require('./routes/analyticsRoutes'));
+app.use('/api/chat', require('./routes/chatRoutes'));
+
+// Configurar Swagger API Documentation
+const setupSwagger = require('./config/swagger');
+setupSwagger(app);
 // Tratamento de erros
 app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Erro interno do servidor' });
@@ -226,7 +239,10 @@ if (require.main === module) {
   inicializarCronJobs();
   
   server.listen(PORT, () => {
-    // Server started
+    logger.info(`🚀 NPJ Professional Server iniciado na porta ${PORT}`);
+    logger.info(`📚 API Documentation: http://localhost:${PORT}/api-docs`);
+    logger.info(`💾 Redis Cache: ${process.env.REDIS_HOST || 'localhost'}:${process.env.REDIS_PORT || 6379}`);
+    logger.info(`🗄️ Database: ${process.env.DB_HOST || 'localhost'}`);
   });
 }
 
