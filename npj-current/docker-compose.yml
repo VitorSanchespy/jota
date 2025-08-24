@@ -1,0 +1,51 @@
+services:
+  npj-current-db:
+    image: mysql:8.0
+    container_name: npj-current-db
+    environment:
+      MYSQL_ROOT_PASSWORD: 12345678@
+      MYSQL_DATABASE: npjdatabase
+      MYSQL_USER: appuser
+      MYSQL_PASSWORD: app123
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./db:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: npj-current-backend
+    ports:
+      - "3001:3001"
+    environment:
+      DB_HOST: npj-current-db
+      DB_USER: appuser
+      DB_PASS: app123
+      DB_NAME: npjdatabase
+    depends_on:
+      npj-current-db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    build: 
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: npj-current-frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
+    driver: local
